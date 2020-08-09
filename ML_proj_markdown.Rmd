@@ -48,6 +48,27 @@ sum(is.na(data))
 
 ```
 
+## Pre-processing
+
+```{r}
+data$porch <- ifelse(data$OpenPorchSF > 0 & data$`3SsnPorch` == 0 & data$ScreenPorch == 0 & 
+                        data$EnclosedPorch == 0, 'open',
+                      ifelse(data$`3SsnPorch` > 0 & data$OpenPorchSF == 0 & data$ScreenPorch == 0 &
+                               data$EnclosedPorch == 0, 'threeSeason',
+                             ifelse(data$ScreenPorch > 0 & data$OpenPorchSF == 0 & 
+                                      data$`3SsnPorch` == 0 & data$EnclosedPorch == 0, 'screen',
+                                    ifelse(data$EnclosedPorch > 0 & data$OpenPorchSF == 0 &
+                                             data$`3SsnPorch` == 0 & data$EnclosedPorch == 0,
+                                           'enclosed', 'multiple'))))
+head(data$porch)
+porch <- data %>% 
+  select(OpenPorchSF, EnclosedPorch, `3SsnPorch`, ScreenPorch)
+porch_drop <- c(names(porch))
+data <- data[, !(names(data) %in% porch_drop)]
+names(data)
+
+```
+
 
 ## R Markdown
 

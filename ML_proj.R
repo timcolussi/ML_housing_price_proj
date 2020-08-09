@@ -53,6 +53,148 @@ house_columns <- c('MSSubClass', 'BldgType', 'HouseStyle', 'YearBuilt', 'RoofSty
 data_house <- data %>% 
   select(house_columns)
 
+glimpse(data_house)
+house_data_char <- as.data.frame(data_house[, sapply(data_house, class) == 'character'])
+
+library(dummies)
+house_data_char_new <- dummy.data.frame(house_data_char, sep=".")
+head(house_data_char_new)
+
+house_data_num <- as.data.frame(data_house[, sapply(data_house, class) == 'numeric'])
+
+house_data_new <- cbind(house_data_num, house_data_char_new)
+
+library(cluster)
+library(ggplot2)
+
+set.seed(2187)
+gower_dist <- daisy(house_data_new,
+                    metric = "gower")
+summary(gower_dist)
+
+sil_width <- c(NA)
+
+for(i in 2:length(house_data_new)){
+  
+  pam_fit <- pam(gower_dist,
+                 diss = TRUE,
+                 k = i)
+  
+  sil_width[i] <- pam_fit$silinfo$avg.width
+  
+}
+plot(1:length(house_data_new), sil_width,
+     xlab = "Number of clusters",
+     ylab = "Silhouette Width")
+lines(1:length(house_data_new), sil_width)
+
+sil_width2 <- c(NA)
+for(i in 2:20){
+  
+  pam_fit <- pam(gower_dist,
+                 diss = TRUE,
+                 k = i)
+  
+  sil_width2[i] <- pam_fit$silinfo$avg.width
+  
+}
+
+plot(1:20, sil_width2,
+     xlab = "Number of clusters",
+     ylab = "Silhouette Width")
+lines(1:20, sil_width2)
+
+gower_dist2 <- daisy(house_data_char_new,
+                    metric = "gower")
+sil_width3 <- c(NA)
+for(i in 2:50){
+  
+  pam_fit <- pam(gower_dist2,
+                 diss = TRUE,
+                 k = i)
+  
+  sil_width3[i] <- pam_fit$silinfo$avg.width
+  
+}
+plot(1:50, sil_width3,
+     xlab = "Number of clusters",
+     ylab = "Silhouette Width")
+lines(1:50, sil_width3)
+
+house_data_char2 <- house_data_char
+
+house_data_char2[] <- lapply(house_data_char2, function(x) if(is.character(x)) as.factor(x) else x)
+glimpse(house_data_char2)
+gower_dist3 <- daisy(house_data_char2,
+                     metric = "gower")
+
+sil_width4 <- c(NA)
+for(i in 2:12){
+  
+  pam_fit <- pam(gower_dist3,
+                 diss = TRUE,
+                 k = i)
+  
+  sil_width4[i] <- pam_fit$silinfo$avg.width
+  
+}
+plot(1:12, sil_width4,
+     xlab = "Number of clusters",
+     ylab = "Silhouette Width")
+lines(1:12, sil_width4)
+
+data_house2 <- data_house
+data_house2[] <- lapply(data_house2, function(x) if(is.character(x)) as.factor(x) else x)
+glimpse(data_house2)
+
+gower_dist4 <- daisy(data_house2,
+                     metric = "gower")
+sil_width5 <- c(NA)
+for(i in 2:30){
+  
+  pam_fit <- pam(gower_dist4,
+                 diss = TRUE,
+                 k = i)
+  
+  sil_width5[i] <- pam_fit$silinfo$avg.width
+  
+}
+plot(1:30, sil_width5,
+     xlab = "Number of clusters",
+     ylab = "Silhouette Width")
+lines(1:30, sil_width5)
+
+names(data)
+porch <- data %>% 
+  select(OpenPorchSF, EnclosedPorch, `3SsnPorch`, ScreenPorch)
+head(porch)
+summary(porch$EnclosedPorch)
+which(porch$OpenPorchSF > 0 & (porch$ScreenPorch > 0 | porch$EnclosedPorch > 0 | porch$`3SsnPorch` > 0))
+porch[745,]
+which(data$GarageYrBlt != data$YearBuilt)
+which(porch$OpenPorchSF == 0 & porch$EnclosedPorch == 0 & porch$`3SsnPorch` == 0 & porch$ScreenPorch == 0)
+data2 <- data
+
+data2$porch <- ifelse(data2$OpenPorchSF > 0 & data2$`3SsnPorch` == 0 & data2$ScreenPorch == 0 & 
+                        data2$EnclosedPorch == 0, 'open',
+                      ifelse(data2$`3SsnPorch` > 0 & data2$OpenPorchSF == 0 & data2$ScreenPorch == 0 &
+                               data2$EnclosedPorch == 0, 'threeSeason',
+                             ifelse(data2$ScreenPorch > 0 & data2$OpenPorchSF == 0 & data2$`3SsnPorch` == 0 &
+                                      data2$EnclosedPorch == 0, 'screen',
+                                    ifelse(data2$EnclosedPorch > 0 & data2$OpenPorchSF == 0 & data2$`3SsnPorch` == 0 &
+                                             data2$EnclosedPorch == 0, 'enclosed', 'multiple'))))
+head(data2$porch)
+porch_drop <- c(names(porch))
+data2 <- data2[, !(names(data2) %in% porch_drop)]
+names(data2)
+
+which(data2$GarageQual != data2$GarageCond)
+
+
+
+
+
+
 
 
 
