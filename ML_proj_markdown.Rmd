@@ -1,14 +1,31 @@
+---
+title: "Housing Prices ML Project"
+author: "Tim Colussi"
+date: "8/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Importing Data
+
+```{r}
 library(readr)
 library(tidyverse)
 data <- read_csv("./train.csv")
-colnames(data)
+
+
+```
+
+## Dealing with Missingness
+
+```{r}
 sum(is.na(data))
-apply(is.na(data), 2, which)
-colnames(data)[colSums(is.na(data)) > 0]
 na_colnames <- colnames(data)[colSums(is.na(data)) > 0]
 na_colnames
 data$PoolQC[is.na(data$PoolQC)] <- "None"
-unique(data$PoolQC)
 data$Fence[is.na(data$Fence)] <- "None"
 data$Alley[is.na(data$Alley)] <- "None"
 data$BsmtQual[is.na(data$BsmtQual)] <- "None"
@@ -22,39 +39,32 @@ data$GarageFinish[is.na(data$GarageFinish)] <- "None"
 data$GarageQual[is.na(data$GarageQual)] <- "None"
 data$GarageCond[is.na(data$GarageCond)] <- "None"
 data$MiscFeature[is.na(data$MiscFeature)] <- "None"
-
-sum(is.na(data$GarageYrBlt))
-sum(data$GarageType == 'None')
-
 data$LotFrontage[is.na(data$LotFrontage)] <- 0
-
-which(is.na(data$GarageYrBlt))
-which(data$GarageType == "None")
-
-head(data$MasVnrArea)
-which(is.na(data$MasVnrArea))
-
 data$MasVnrType[is.na(data$MasVnrType)] <- "None"
 data$MasVnrArea[is.na(data$MasVnrArea)] <- 0
-
 data$GarageYrBlt[is.na(data$GarageYrBlt)] <- 0
-which(is.na(data$Electrical))
-
 data <- na.omit(data)
+sum(is.na(data))
 
-glimpse(data$YrSold)
-
-house_columns <- c('MSSubClass', 'BldgType', 'HouseStyle', 'YearBuilt', 'RoofStyle', 'RoofMatl', 
-                   'Exterior1st', 'Exterior2nd', 'MasVnrType', 'MasVnrArea', 'Foundation', 
-                   'BsmtExposure', 'BsmtFinType1', 'BsmtFinSF1', 'BsmtFinType2', 'BsmtFinSF2', 
-                   'BsmtUnfSF', 'TotalBsmtSF', '1stFlrSF', '2ndFlrSF', 'LowQualFinSF', 
-                   'GrLivArea', 'BsmtFullBath', 'BsmtHalfBath', 'FullBath', 'HalfBath', 
-                   'BedroomAbvGr', 'KitchenAbvGr', 'KitchenQual', 'TotRmsAbvGrd')
-data_house <- data %>% 
-  select(house_columns)
+```
 
 
+## R Markdown
 
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
+```{r cars}
+summary(cars)
+```
 
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
