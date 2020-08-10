@@ -190,13 +190,26 @@ names(data2)
 
 which(data2$GarageQual != data2$GarageCond)
 
+which(data2$BsmtFinType1 == ('GLQ'))
 
+row_988 <- data2[988, ]
+row_988$BsmtFinSF1
+row_988$BsmtFinType1
+row_988$BsmtFinType2
+row_988$BsmtFinSF2
+row_988$TotalBsmtSF - row_988$BsmtUnfSF
+row_988$TotalBsmtSF
+row_988$BsmtUnfSF
 
+row_988$`2ndFlrSF` + row_988$`1stFlrSF`
+row_988$GrLivArea
+row_988$LowQualFinSF
+summary(data$LowQualFinSF)
+which(data2$LowQualFinSF > 0)
 
-
-
-
-
-
-
+data2$bsmt_perc_fin <- (data2$BsmtFinSF1 + data2$BsmtFinSF2)/data2$TotalBsmtSF
+summary(data2$bsmt_perc_fin)
+data2$bsmt_perc_fin[is.na(data2$bsmt_perc_fin)] <- 0
+bsmt_drops <- c('BsmtFinType1', 'BsmtFinSF1', 'BsmtFinType2', 'BsmtFinSF2', 'BsmtUnfSF')
+data2 <- data2[, !(names(data2) %in% bsmt_drops)]
 

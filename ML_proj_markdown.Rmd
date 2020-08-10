@@ -51,6 +51,7 @@ sum(is.na(data))
 ## Pre-processing
 
 ```{r}
+# creating porch type column and removing porch columns
 data$porch <- ifelse(data$OpenPorchSF > 0 & data$`3SsnPorch` == 0 & data$ScreenPorch == 0 & 
                         data$EnclosedPorch == 0, 'open',
                       ifelse(data$`3SsnPorch` > 0 & data$OpenPorchSF == 0 & data$ScreenPorch == 0 &
@@ -66,6 +67,15 @@ porch <- data %>%
 porch_drop <- c(names(porch))
 data <- data[, !(names(data) %in% porch_drop)]
 names(data)
+
+# adding percent basement finished and removed all basement columns except total sqft
+
+data$bsmt_perc_fin <- (data$BsmtFinSF1 + data$BsmtFinSF2)/data$TotalBsmtSF
+summary(data$bsmt_perc_fin)
+data$bsmt_perc_fin[is.na(data$bsmt_perc_fin)] <- 0
+bsmt_drops <- c('BsmtFinType1', 'BsmtFinSF1', 'BsmtFinType2', 'BsmtFinSF2', 'BsmtUnfSF')
+data <- data[, !(names(data) %in% bsmt_drops)]
+
 
 ```
 
