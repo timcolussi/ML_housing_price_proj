@@ -178,4 +178,34 @@ sum(is.na(housing_data))
 
 ncol(housing_data)
 
+ggplot(housing_data, aes(x = SalePrice)) + geom_histogram(bins = 100) +
+  scale_x_continuous(labels=scales::dollar_format()) +
+  labs(title = "Frequency of Sale Price",
+       x = "Sale Price",
+       y = "Freqeuncy")
+
+ggplot(housing_data, aes(x = SalePrice)) + geom_histogram(bins = 100) +
+  scale_x_log10(labels=scales::dollar_format()) +
+  labs(title = "Frequency of Sale Price",
+       x = "Sale Price (Log Scale)",
+       y = "Freqeuncy")
+
+target <- log(housing_data$SalePrice)
+summary(target)
+target_df <- data.frame(target)
+hist(target, breaks = 50)
+hist(housing_data$SalePrice, breaks = 50)
+head(target_df)
+
+ggplot(housing_data, aes(x = SalePrice)) + geom_histogram(bins = 100) +
+  scale_x_continuous(labels=scales::dollar_format()) +
+  labs(title = "Frequency of Sale Price",
+       x = "Sale Price",
+       y = "Freqeuncy")
+
+ggplot(target_df, aes(x = target)) + geom_histogram(bins = 100) +
+  labs(title = "Frequency of Sale Price",
+       x = "Log of Sale Price",
+       y = "Freqeuncy")
+
 
