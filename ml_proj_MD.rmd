@@ -16,10 +16,45 @@ setwd("~/NYCDSA/ML_project/ML_housing_price_proj")
 library(readr)
 housing_data_raw <- read_csv("./train.csv")
 
-
 ```
 
 
+## Determining Missingness
+
+```{r}
+# function to calculate percent missingness in each column
+library(tidyverse)
+library(ggplot2)
+
+perc_missingness <- function(x) {
+  data.frame("Percent.Missing" = floor(apply(is.na(x), 2, sum)/nrow(x)*100))
+}
+
+missing <- perc_missingness(housing_data_raw)
+missing$Column.Names <- row.names(missing)
+missing <- missing[missing$Percent.Missing > 0, ]
+
+# plotting the missingness
+
+ggplot(missing, aes(x = reorder(Column.Names, Percent.Missing), y = Percent.Missing)) +
+  geom_bar(stat="identity") + 
+  coord_flip(ylim = c(4,100)) + 
+  labs(title = "Percent of Data Missing for each Feature",
+       x = "Feature",
+       y = "Percent Missing") +
+  theme_bw()
+
+
+```
+
+## Imputing Missingness
+
+```{r}
+
+
+
+
+```
 
 
 
