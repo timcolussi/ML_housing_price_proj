@@ -115,7 +115,7 @@ housing_data[nwames_na_idx, "LotFrontage"] <- mean_lot_nwames
 housing_data[crawfor_na_idx, "LotFrontage"] <- mean_lot_crawfor
 
 # imputing Electrical
-which(is.na(housing_data$Electrical))
+#which(is.na(housing_data$Electrical))
 housing_data[1380, c('Neighborhood', 'Electrical')]
 timber <- housing_data %>% 
   filter(Neighborhood == 'Timber')
@@ -125,6 +125,9 @@ getmode <- function(v) {
 }
 mode_elec_timber <- getmode(timber$Electrical)
 housing_data[1380, "Electrical"] <- mode_elec_timber
+
+more_columns_to_drop <- c("LotShape", "Id", "LandContour", "BsmtQual", "GarageArea")
+housing_data[, more_columns_to_drop] <- list(NULL)
 
 columns_finished <- ncol(housing_data)
 na_finished <- sum(is.na(housing_data))

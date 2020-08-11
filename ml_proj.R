@@ -100,6 +100,12 @@ getmode <- function(v) {
 mode_elec_timber <- getmode(timber$Electrical)
 housing_data[1380, "Electrical"] <- mode_elec_timber
 
+names(housing_data)
+
+more_columns_to_drop <- c("LotShape", "Id", "LandContour", "BsmtQual", "GarageArea")
+housing_data[, more_columns_to_drop] <- list(NULL)
+
+
 ggplot(housing_data, aes(x = SalePrice)) + geom_histogram(bins = 100) +
   scale_x_continuous(labels=scales::dollar_format()) +
   labs(title = "Frequency of Sale Price",
