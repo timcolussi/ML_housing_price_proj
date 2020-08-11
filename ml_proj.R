@@ -120,4 +120,39 @@ ggplot(target_df, aes(x = target)) + geom_histogram(bins = 100) +
        x = "Log of Sale Price",
        y = "Freqeuncy")
 
+ggplot(housing_data, aes(x = SalePrice)) + geom_boxplot() + 
+  scale_x_continuous(labels=scales::dollar_format())
+
+modeling_data <- housing_data
+modeling_data$LogSalePrice <- log(modeling_data$SalePrice)
+modeling_data$SalePrice <- NULL
+
+which(housing_data$SalePrice > 700000)
+housing_data[692, ]
+(max(housing_data$GrLivArea))
+
+modeling_data <- modeling_data[-c(692,1183), ]
+
+glimpse(modeling_data)
+
+modeling_data[] <- lapply(modeling_data, function(x) if(is.character(x)) as.factor(x) else x)
+modeling_data$MSSubClass <- as.factor(modeling_data$MSSubClass)
+
+library(lubridate)
+year(modeling_data$YearBuilt)
+
+set.seed(2187)
+index <- sample(1:nrow(modeling_data), size=nrow(modeling_data)*0.8)
+train <- modeling_data[index, ]
+test <- modeling_data[-index, ]
+
+
+
+mlr_model <- lm(LogSalePrice ~ ., train)
+
+
+
+
+
+
 
