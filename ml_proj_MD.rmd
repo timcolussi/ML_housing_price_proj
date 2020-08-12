@@ -175,6 +175,10 @@ modeling_data <- housing_data
 modeling_data$LogSalePrice <- log(modeling_data$SalePrice)
 modeling_data$SalePrice <- NULL
 
+# removing Utilities
+modeling_data$Utilities <- NULL
+
+
 
 ```
 
