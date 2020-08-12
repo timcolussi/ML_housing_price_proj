@@ -184,6 +184,37 @@ modeling_data2 <- modeling_data
 modeling_data2$LogSalePrice <- NULL
 cor(modeling_data)
 
+test_target <- test
+test_target$LogSalePrice <- NULL
+
+mlr_model_pred <- predict(mlr_model, test_target, interval = "prediction")
+
+table(housing_data_raw$Neighborhood)
+table(train$Neighborhood)
+table(test$Neighborhood)
+
+library(caret)
+set.seed(2187)
+train.index <- createDataPartition(modeling_data$Neighborhood, p = 0.7, list = FALSE)
+
+train2 <- modeling_data[train.index, ]
+test2 <- modeling_data[-train.index, ]
+
+mlr_model2 <- lm(LogSalePrice ~ ., data = train2)
+summary(mlr_model2)
+vif(mlr_model2)
+ld.vars2 <- attributes(alias(mlr_model2)$Complete)$dimnames[[1]]
+ld.vars2
+
+a <- table(housing_data_raw$BsmtExposure)
+a[[1]]
+
+test_target2 <- test2
+test_target2$LogSalePrice <- NULL
+mlr_model_pred2 <- predict(mlr_model2, test_target2, interval = "prediction")
+
+
+
 
 ##
 
@@ -198,13 +229,6 @@ cor(modeling_data)
 # 
 # fit.new <-lm(formula.new)
 # vif(fit.new)
-
-
-
-
-
-
-
 
 # fixing contraat error
 # glimpse(train)
