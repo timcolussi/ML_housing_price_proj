@@ -123,6 +123,136 @@ ggplot(target_df, aes(x = target)) + geom_histogram(bins = 100) +
 ggplot(housing_data, aes(x = SalePrice)) + geom_boxplot() + 
   scale_x_continuous(labels=scales::dollar_format())
 
+## figuring out categoricals with low instances
+which(sapply(housing_data, is.character))
+table(housing_data$SaleCondition)
+## combining FR2 and FR3 to FR
+housing_data$LotConfig <- ifelse(housing_data$LotConfig == "FR2" | housing_data$LotConfig == "FR3",
+                                 "FR", housing_data$LotConfig)
+## can't remove neighborhood so split on this
+## altering RR and Pos categories in Cond1 
+housing_data$Condition1 <- ifelse(housing_data$Condition1 == "RRAe" | 
+                                    housing_data$Condition1 == "RRAn" |
+                                    housing_data$Condition1 == "RRNe" |
+                                    housing_data$Condition1 == "RRNn", "RR", 
+                                  housing_data$Condition1)
+housing_data$Condition1 <- ifelse(housing_data$Condition1 == "PosA" |
+                                    housing_data$Condition1 == "PosN", "Pos",
+                                  housing_data$Condition1)
+## dropping Cond2, mostly norm
+## grouping rare roofstyle as other
+housing_data$RoofStyle <- ifelse(housing_data$RoofStyle == "Flat" |
+                                   housing_data$RoofStyle == "Gambrel" |
+                                   housing_data$RoofStyle == "Mansard" |
+                                   housing_data$RoofStyle == "Shed", "Other",
+                                 housing_data$RoofStyle)
+## changing roofmatl to either CompShg or not
+housing_data$RoofMatl <- ifelse(housing_data$RoofMatl != "CompShg", "Other", housing_data$RoofMatl)
+## Exterior1 to Shingles, Siding, Brick, or Other
+#housing_data$Exterior1st <- housing_data_raw$Exterior1st
+housing_data$Exterior1st <- ifelse(housing_data$Exterior1st == "AsbShng" |
+                                     housing_data$Exterior1st == "AsphShn" |
+                                     housing_data$Exterior1st == "WdShing", "Shingles",
+                                   housing_data$Exterior1st)
+housing_data$Exterior1st <- ifelse(housing_data$Exterior1st == "MetalSd" |
+                                     housing_data$Exterior1st == "VinylSd" |
+                                     housing_data$Exterior1st == "Wd Sdng", "Siding",
+                                   housing_data$Exterior1st)
+housing_data$Exterior1st <- ifelse(housing_data$Exterior1st == "BrkComm" |
+                                     housing_data$Exterior1st == "BrkFace", "Brick",
+                                   housing_data$Exterior1st)
+housing_data$Exterior1st <- ifelse(housing_data$Exterior1st == "Brick" |
+                                     housing_data$Exterior1st == "Shingles" |
+                                     housing_data$Exterior1st == "Siding", 
+                                   housing_data$Exterior1st, "Other")
+## same for Exterior 2
+housing_data$Exterior2nd <- ifelse(housing_data$Exterior2nd == "AsbShng" |
+                                     housing_data$Exterior2nd == "AsphShn" |
+                                     housing_data$Exterior2nd == "WdShing", "Shingles",
+                                   housing_data$Exterior2nd)
+housing_data$Exterior2nd <- ifelse(housing_data$Exterior2nd == "MetalSd" |
+                                     housing_data$Exterior2nd == "VinylSd" |
+                                     housing_data$Exterior2nd == "Wd Sdng", "Siding",
+                                   housing_data$Exterior2nd)
+housing_data$Exterior2nd <- ifelse(housing_data$Exterior2nd == "BrkComm" |
+                                     housing_data$Exterior2nd == "BrkFace", "Brick",
+                                   housing_data$Exterior2nd)
+housing_data$Exterior2nd <- ifelse(housing_data$Exterior2nd == "Brick" |
+                                     housing_data$Exterior2nd == "Shingles" |
+                                     housing_data$Exterior2nd == "Siding", 
+                                   housing_data$Exterior2nd, "Other")
+## changing ExterCond variables to AbTA, TA, and BlTA
+housing_data$ExterCond <- ifelse(housing_data$ExterCond == "Ex" |
+                                   housing_data$ExterCond == "Gd", "AbTA",
+                                 housing_data$ExterCond)
+housing_data$ExterCond <- ifelse(housing_data$ExterCond == "Fa" |
+                                   housing_data$ExterCond == "Po", "BlTA",
+                                 housing_data$ExterCond)
+## changed uncommon foundations to other
+housing_data$Foundation <- ifelse(housing_data$Foundation == "Slab" |
+                                    housing_data$Foundation == "Stone" |
+                                    housing_data$Foundation == "Wood", "Other",
+                                  housing_data$Foundation)
+## grouped Fa and Po to BlTA for BsmtCond
+housing_data$BsmtCond <- ifelse(housing_data$BsmtCond == "Fa" |
+                                  housing_data$BsmtCond == "Po", "BlTA",
+                                housing_data$BsmtCond)
+## changed heatingQC to AbTA, TA, or BlTA
+housing_data$HeatingQC <- ifelse(housing_data$HeatingQC == "Ex" | 
+                                   housing_data$HeatingQC == "Gd", "AbTA",
+                                 housing_data$HeatingQC)
+housing_data$HeatingQC <- ifelse(housing_data$HeatingQC == "Fa" |
+                                   housing_data$HeatingQC == "Po", "BlTA",
+                                 housing_data$HeatingQC)
+## change Functional to either Typ or Deduct
+housing_data$Functional <- ifelse(housing_data$Functional == "Typ",
+                                  housing_data$Functional, "Deduct")
+## changing fireplaceQu to AbTA, TA, BlTA, and None
+housing_data$FireplaceQu <- ifelse(housing_data$FireplaceQu == "Ex" |
+                                     housing_data$FireplaceQu == "Gd", "AbTA",
+                                   housing_data$FireplaceQu)
+housing_data$FireplaceQu <- ifelse(housing_data$FireplaceQu == "Fa" |
+                                     housing_data$FireplaceQu == "Po", "BlTA",
+                                   housing_data$FireplaceQu)
+## changing GarageQual to AbTA, TA, BlTA
+housing_data$GarageQual <- ifelse(housing_data$GarageQual == "Ex" |
+                                    housing_data$GarageQual == "Gd", "AbTA",
+                                  housing_data$GarageQual)
+housing_data$GarageQual <- ifelse(housing_data$GarageQual == "Fa" |
+                                    housing_data$GarageQual == "Po", "BlTA",
+                                  housing_data$GarageQual)
+## changing GarageCond to AbTA, TA, BlTA
+housing_data$GarageCond <- ifelse(housing_data$GarageCond == "Ex" |
+                                    housing_data$GarageCond == "Gd", "AbTA",
+                                  housing_data$GarageCond)
+housing_data$GarageCond <- ifelse(housing_data$GarageCond == "Fa" |
+                                    housing_data$GarageCond == "Po", "BlTA",
+                                  housing_data$GarageCond)
+## grouping SaleType into Contract, WarrDeed, New, Other
+housing_data$SaleType <- ifelse(housing_data$SaleType == "Con" |
+                                  housing_data$SaleType == "ConLD" |
+                                  housing_data$SaleType == "ConLI" |
+                                  housing_data$SaleType == "ConLw", "Contract",
+                                housing_data$SaleType)
+housing_data$SaleType <- ifelse(housing_data$SaleType == "CWD" |
+                                  housing_data$SaleType == "WD", "WarrDeed",
+                                housing_data$SaleType)
+housing_data$SaleType <- ifelse(housing_data$SaleType == "COD" |
+                                  housing_data$SaleType == "Oth", "Other",
+                                housing_data$SaleType)
+## grouped AdjLand, Alloca, Family as other for SaleCondition
+housing_data$SaleCondition <- ifelse(housing_data$SaleCondition == "AdjLand" |
+                                       housing_data$SaleCondition == "Alloca" |
+                                       housing_data$SaleCondition == "Family", "Other",
+                                     housing_data$SaleCondition)
+
+to_drop <- c("Street", "Condition2", "Heating")
+housing_data[, to_drop] <- NULL
+
+
+
+
+
 modeling_data <- housing_data
 modeling_data$LogSalePrice <- log(modeling_data$SalePrice)
 modeling_data$SalePrice <- NULL
@@ -153,45 +283,59 @@ modeling_data$GrLivArea <- NULL
 # drop Utilities because they are all the same
 modeling_data$Utilities <- NULL
 
-set.seed(2187)
-index <- sample(1:nrow(modeling_data), size=nrow(modeling_data)*0.8)
-train <- modeling_data[index, ]
-test <- modeling_data[-index, ]
+# table(housing_data$SaleCondition)
+# 
+# other_roofmatl <- c("ClyTile", "Membran", "Metal", "Roll")
+# housing_data$RoofMatl <- ifelse(housing_data$RoofMatl %in% other_roofmatl, "Other", housing_data$RoofMatl)
+# housing_data$HeatingQC <- ifelse(housing_data$HeatingQC == "Po", "Fa", housing_data$HeatingQC)
+# 
+# even_more_columns_to_drop <- c("Condition2", "Exterior1st", "Exterior2nd", "ExterCond", "Heating",
+#                                "Electrical")
+# which(housing_data$Functional == "Sev")
+# housing_data <- housing_data[-c(667), ]
+# housing_data[, even_more_columns_to_drop] <- NULL
 
-mlr_model <- lm(LogSalePrice ~ ., train)
 
-summary(mlr_model)
-library(car)
-vif(mlr_model)
 
-ld.vars <- attributes(alias(mlr_model)$Complete)$dimnames[[1]]
-ld.vars
-
-mlr.empty <- lm(LogSalePrice ~ 1, data = train)
-mlr.saturated <- lm(LogSalePrice ~ ., data = train)
-scope = list(lower = formula(mlr.empty), upper = formula(mlr.saturated))
-
-library(MASS)
-backwardAIC = step(mlr.saturated, scope, direction = "backward", k = 2)
-forwardAIC = step(mlr.empty, scope, direction = "forward", k = 2)
-
-summary(backwardAIC)
-summary(forwardAIC)
-vif(backwardAIC)
-vif(forwardAIC)
-
-modeling_data2 <- modeling_data
-modeling_data2$LogSalePrice <- NULL
-cor(modeling_data)
-
-test_target <- test
-test_target$LogSalePrice <- NULL
-
-mlr_model_pred <- predict(mlr_model, test_target, interval = "prediction")
-
-table(housing_data_raw$Neighborhood)
-table(train$Neighborhood)
-table(test$Neighborhood)
+# set.seed(2187)
+# index <- sample(1:nrow(modeling_data), size=nrow(modeling_data)*0.8)
+# train <- modeling_data[index, ]
+# test <- modeling_data[-index, ]
+# 
+# mlr_model <- lm(LogSalePrice ~ ., train)
+# 
+# summary(mlr_model)
+# library(car)
+# vif(mlr_model)
+# 
+# ld.vars <- attributes(alias(mlr_model)$Complete)$dimnames[[1]]
+# ld.vars
+# 
+# mlr.empty <- lm(LogSalePrice ~ 1, data = train)
+# mlr.saturated <- lm(LogSalePrice ~ ., data = train)
+# scope = list(lower = formula(mlr.empty), upper = formula(mlr.saturated))
+# 
+# library(MASS)
+# backwardAIC = step(mlr.saturated, scope, direction = "backward", k = 2)
+# forwardAIC = step(mlr.empty, scope, direction = "forward", k = 2)
+# 
+# summary(backwardAIC)
+# summary(forwardAIC)
+# vif(backwardAIC)
+# vif(forwardAIC)
+# 
+# modeling_data2 <- modeling_data
+# modeling_data2$LogSalePrice <- NULL
+# cor(modeling_data)
+# 
+# test_target <- test
+# test_target$LogSalePrice <- NULL
+# 
+# mlr_model_pred <- predict(mlr_model, test_target, interval = "prediction")
+# 
+# table(housing_data_raw$Neighborhood)
+# table(train$Neighborhood)
+# table(test$Neighborhood)
 
 library(caret)
 set.seed(2187)
@@ -213,6 +357,16 @@ test_target2 <- test2
 test_target2$LogSalePrice <- NULL
 mlr_model_pred2 <- predict(mlr_model2, test_target2, interval = "prediction")
 
+test_tab1 <- table(housing_data_raw$Exterior2nd)
+test_tab1
+dim(test_tab1)
+
+table(truth = train2$LogSalePrice, prediction = mlr_model2$fitted.values)
+which(sapply(modeling_data, is.factor))
+
+anova(mlr_model2)
+
+summary(mlr_model2)
 
 
 
