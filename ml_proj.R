@@ -271,71 +271,10 @@ modeling_data$MSSubClass <- as.factor(modeling_data$MSSubClass)
 modeling_data$TotalBsmtSF <- NULL
 modeling_data$GrLivArea <- NULL
 
-# library(lubridate)
-# 
-# year_blt <- strptime(modeling_data$YearBuilt, "%Y")
-# mo_blt <- strptime(modeling_data$MoSold, "%M")
-# year(year_blt)
-# month(mo_blt)
-# 
-# head(modeling_data$MoSold, 15)
-
 # drop Utilities because they are all the same
 modeling_data$Utilities <- NULL
 
-# table(housing_data$SaleCondition)
-# 
-# other_roofmatl <- c("ClyTile", "Membran", "Metal", "Roll")
-# housing_data$RoofMatl <- ifelse(housing_data$RoofMatl %in% other_roofmatl, "Other", housing_data$RoofMatl)
-# housing_data$HeatingQC <- ifelse(housing_data$HeatingQC == "Po", "Fa", housing_data$HeatingQC)
-# 
-# even_more_columns_to_drop <- c("Condition2", "Exterior1st", "Exterior2nd", "ExterCond", "Heating",
-#                                "Electrical")
-# which(housing_data$Functional == "Sev")
-# housing_data <- housing_data[-c(667), ]
-# housing_data[, even_more_columns_to_drop] <- NULL
-
-
-
-# set.seed(2187)
-# index <- sample(1:nrow(modeling_data), size=nrow(modeling_data)*0.8)
-# train <- modeling_data[index, ]
-# test <- modeling_data[-index, ]
-# 
-# mlr_model <- lm(LogSalePrice ~ ., train)
-# 
-# summary(mlr_model)
-# library(car)
-# vif(mlr_model)
-# 
-# ld.vars <- attributes(alias(mlr_model)$Complete)$dimnames[[1]]
-# ld.vars
-# 
-# mlr.empty <- lm(LogSalePrice ~ 1, data = train)
-# mlr.saturated <- lm(LogSalePrice ~ ., data = train)
-# scope = list(lower = formula(mlr.empty), upper = formula(mlr.saturated))
-# 
-# library(MASS)
-# backwardAIC = step(mlr.saturated, scope, direction = "backward", k = 2)
-# forwardAIC = step(mlr.empty, scope, direction = "forward", k = 2)
-# 
-# summary(backwardAIC)
-# summary(forwardAIC)
-# vif(backwardAIC)
-# vif(forwardAIC)
-# 
-# modeling_data2 <- modeling_data
-# modeling_data2$LogSalePrice <- NULL
-# cor(modeling_data)
-# 
-# test_target <- test
-# test_target$LogSalePrice <- NULL
-# 
-# mlr_model_pred <- predict(mlr_model, test_target, interval = "prediction")
-# 
-# table(housing_data_raw$Neighborhood)
-# table(train$Neighborhood)
-# table(test$Neighborhood)
+## Multiple Linear Regression
 
 library(caret)
 set.seed(2187)
@@ -350,24 +289,224 @@ vif(mlr_model2)
 ld.vars2 <- attributes(alias(mlr_model2)$Complete)$dimnames[[1]]
 ld.vars2
 
-a <- table(housing_data_raw$BsmtExposure)
-a[[1]]
 
 test_target2 <- test2
 test_target2$LogSalePrice <- NULL
 mlr_model_pred2 <- predict(mlr_model2, test_target2, interval = "prediction")
 
-test_tab1 <- table(housing_data_raw$Exterior2nd)
-test_tab1
-dim(test_tab1)
+plot(mlr_model2)
 
-table(truth = train2$LogSalePrice, prediction = mlr_model2$fitted.values)
-which(sapply(modeling_data, is.factor))
+plot(mlr_model_pred2[,1], test2$LogSalePrice)
+mlr_empty2 <- lm(LogSalePrice ~ 1, data = train2)
+scope = list(lower = formula(mlr_empty2), upper = formula(mlr_model2))
 
-anova(mlr_model2)
+library(MASS)
+backwardAIC2 = step(mlr_model2, scope, direction = "backward", k = 2)
+forwardAIC2 = step(mlr_empty2, scope, direction = "forward", k = 2)
+
+anova(forwardAIC2, mlr_model2)
 
 summary(mlr_model2)
+summary(backwardAIC2)
+pred_back2 <- predict(backwardAIC2, test_target2, interval = "prediction")
+plot(pred_back2[,1], test2$LogSalePrice)
 
+summary(backwardAIC2)$r.squared
+summary(mlr_model2)$r.squared
+summary(forwardAIC2)$r.squared
+cor(mlr_model_pred2[,1], test2$LogSalePrice)^2
+cor(pred_back2[,1], test2$LogSalePrice)^2
+
+backwardAIC2$model
+
+# full_data_pred <- predict(backwardAIC2, modeling_data, interval = "prediction")
+# plot(full_data_pred[,1], modeling_data$LogSalePrice)
+# cor(full_data_pred[,1], modeling_data$LogSalePrice)^2
+
+summ <- summary(backwardAIC2)
+best_model_formula <- summ[[1]]
+best_form <- as.formula(best_model_formula)
+best_mlr <- lm(best_form, data = modeling_data)
+summary(best_mlr)$r.squared
+plot(best_mlr$fitted.values, modeling_data$LogSalePrice)
+cor(best_mlr$fitted.values, modeling_data$LogSalePrice)^2
+summary(best_mlr)
+best_form
+
+##############################################################################################
+## processing test.csv #######################################################################
+##############################################################################################
+unseen_data_raw <- read_csv("./test.csv") 
+unseen_data <- unseen_data_raw
+
+unseen_data$TotPorchSF <- unseen_data$`3SsnPorch` + unseen_data$OpenPorchSF + 
+  unseen_data$ScreenPorch + unseen_data$EnclosedPorch
+
+# adding a column for percent of basement that is finished
+unseen_data$BsmtPercFin <- (unseen_data$BsmtFinSF1 +
+                               unseen_data$BsmtFinSF2)/unseen_data$TotalBsmtSF
+
+# added TotSF and TotSFAbvGrd columns 
+unseen_data <- unseen_data %>% 
+  rename(FrstFlrSF = `1stFlrSF`,
+         ScndFlrSF = `2ndFlrSF`)
+unseen_data$TotSF <- unseen_data$GrLivArea  + unseen_data$TotalBsmtSF
+
+# adding columns for TotFullBath and TotHalfBath
+unseen_data$TotFullBath <- unseen_data$FullBath + unseen_data$BsmtFullBath
+unseen_data$TotHalfBath <- unseen_data$HalfBath + unseen_data$BsmtHalfBath
+
+# removing some columns
+unseen_data <- unseen_data %>% 
+  rename(ThrScn = `3SsnPorch`)
+columns_to_drop <- c("PoolQC", "MiscFeature", "MiscValue", "GarageYrBlt",
+                     "BsmtFinType1", "BsmtFinSF1", "BsmtFinType2", "BsmtFinSF2", "FrstFlrSF",
+                     "ScndFlrSF", "BsmtUnfSF", "FullBath", "HalfBath", "BsmtFullBath",
+                     "BsmtHalfBath", "OpenPorchSF", "ThrScn", "ScreenPorch", "EnclosedPorch")
+unseen_data[, columns_to_drop] <- list(NULL)
+
+# imputing NAs with "None" or 0
+library(data.table)
+
+columns_to_convert_na_none <- c("Fence", "FireplaceQu", "GarageType", "GarageFinish", "GarageCond",
+                                "MasVnrType", "Alley", "BsmtQual", "BsmtCond", "BsmtExposure", 
+                                "GarageQual", "Garage")
+
+columns_to_convert_na_zero <- c("MasVnrArea", "BsmtPercFin", "PoolArea")
+
+for(k in names(unseen_data)){
+  if(k %in% columns_to_convert_na_none){
+    set(x = unseen_data, which(is.na(unseen_data[[k]])), k, "None")
+  }
+  else if(k %in% columns_to_convert_na_zero){
+    set(x = unseen_data, which(is.na(unseen_data[[k]])), k, 0)
+  }
+}
+##
+unseen_missing <- perc_missingness(unseen_data)
+unseen_missing$Column.Names <- row.names(unseen_missing)
+unseen_missing <- unseen_missing[unseen_missing$Percent.Missing > 0, ]
+unseen_missing
+sum(is.na(unseen_data$LotFrontage))
+
+unseen_data <- unseen_data %>% 
+  group_by(Neighborhood, LotConfig) %>% 
+  mutate(LotFrontage = ifelse(is.na(LotFrontage), mean(LotFrontage, na.rm = TRUE), LotFrontage))
+na_LF <- which(is.na(unseen_data$LotFrontage)) 
+unseen_data[na_LF, c("LotFrontage", "LotConfig", "Neighborhood")] 
+
+gilbert <- unseen_data %>% 
+  filter(Neighborhood == "Gilbert")
+mn_lf_gilbert <- round(mean(gilbert$LotFrontage, na.rm = TRUE), digits = 2)
+noridge <- unseen_data %>% 
+  filter(Neighborhood == "NoRidge")
+mn_lf_noridge <- round(mean(noridge$LotFrontage, na.rm = TRUE), digits = 2)
+na_LF
+unseen_data[1218, "Neighborhood"]
+idx_gilbert <- c(482, 1218)
+idx_nwames <- c(498, 1175)
+idx_noridge <- c(537)
+unseen_data[idx_gilbert, "LotFrontage"] <- mn_lf_gilbert
+unseen_data[idx_nwames, "LotFrontage"] <- mean_lot_nwames
+unseen_data[idx_noridge, "LotFrontage"] <- mn_lf_noridge
+sum(is.na(unseen_data$LotFrontage))
+sum(is.na(unseen_data))
+
+summary(unseen_data)
+num_missing <- function(x) {
+  data.frame("Number.Missing" = apply(is.na(x), 2, sum))
+}
+unseen_missing2 <- num_missing(unseen_data)
+unseen_missing2$Column.names <- row.names(unseen_missing2)
+unseen_missing2 <- unseen_missing2[unseen_missing2$Number.Missing > 0, ]
+unseen_missing2
+which(!complete.cases(unseen_data))
+
+which(is.na(unseen_data$TotSF))
+
+unseen_data[661, c("GrLivArea", "TotalBsmtSF", "TotFullBath", "TotHalfBath")]
+unseen_data_raw[661, c("FullBath", "HalfBath", "BsmtFullBath", "BsmtHalfBath")]
+unseen_data[661, "TotSF"] <- unseen_data_raw[661, "GrLivArea"]
+unseen_data[661, "TotFullBath"] <- unseen_data_raw[661, "FullBath"]
+unseen_data[661, "TotHalfBath"] <- unseen_data_raw[661, "HalfBath"]
+mszon_na <- which(is.na(unseen_data$MSZoning))
+unseen_data[mszon_na, c("Neighborhood", "SaleType")]
+
+idotrr <- unseen_data %>% 
+  filter(Neighborhood == "IDOTRR")
+id_mode_zone <- getmode(idotrr$MSZoning)
+mitchel <- unseen_data %>% 
+  filter(Neighborhood == "Mitchel")
+mitch_mode_zone <- getmode(mitchel$MSZoning)
+unseen_data[791, "Neighborhood"]
+idx_mitchel <- c(456, 757, 791)
+unseen_data[idx_mitchel, "MSZoning"] <- id_mode_zone
+unseen_data[1445, "MSZoning"] <- mitch_mode_zone  
+
+which(is.na(unseen_data$TotHalfBath))
+unseen_data_raw[729, c("FullBath", "HalfBath", "BsmtFullBath", "BsmtHalfBath")]
+unseen_data[729, "TotFullBath"] <- unseen_data_raw[729, "FullBath"]
+unseen_data[729, "TotHalfBath"] <- unseen_data_raw[729, "HalfBath"]
+
+getmode(unseen_data$Exterior1st)
+
+which(is.na(unseen_data$GarageCars))
+unseen_data[1117, c("GarageArea", "GarageCars", "GarageType")]
+
+unseen_data2 <- unseen_data
+column_to_mode <- c("Exterior1st")
+which(is.na(unseen_data$Exterior1st))
+
+columns_to_mode <- c("Exterior1st", "Exterior2nd", "KitchenQual", "Functional", "SaleType")
+
+for(k in names(unseen_data)){
+  if(k %in% columns_to_mode){
+    set(x = unseen_data, which(is.na(unseen_data[[k]])), k, getmode(unseen_data[[k]]))
+  }
+}
+
+unseen_data %>% 
+  group_by(GarageType) %>% 
+  summarise(ave_cars = mean(GarageCars, na.rm = TRUE),
+            ave_area = mean(GarageArea, na.rm = TRUE))
+which(is.na(unseen_data$GarageCars))
+unseen_data[1117, "GarageCars"] <- 1.5
+unseen_data[1117, "GarageArea"] <- 412
+
+to_drop <- c("Street", "Condition2", "Heating", "Utilities", "TotalBsmtSF", "GrLivArea",
+             "LotShape", "Id", "LandContour", "BsmtQual", "GarageArea")
+
+unseen_data[, to_drop] <- NULL
+
+#############################################################################################
+######### Ignore for now ####################################################################
+#############################################################################################
+
+
+# vif(backwardAIC2)
+# ld.vars2 <- attributes(alias(backwardAIC2)$Complete)$dimnames[[1]]
+# ld.vars2
+
+# ## trying iterative significant selection found online
+# all_vars <- names(mlr_model2[[1]])[-1]
+# summ <- summary(mlr_model2)
+# pvals <- summ[[4]][, 4]
+# not_significant <- character()
+# not_significant <- names(which(pvals > 0.1))
+# not_significant <- not_significant[!not_significant %in% "(Intercept)"]
+# 
+# while(length(not_significant) > 0){
+#   all_vars <- all_vars[!all_vars %in% not_significant[1]]
+#   myForm <- as.formula(paste("LogSalePrice ~ ", paste (all_vars, collapse=" + "), sep=""))  # new formula
+#   selectedMod <- lm(myForm, data=train2)  # re-build model with new formula
+#   
+#   # Get the non-significant vars.
+#   summ <- summary(selectedMod)
+#   pvals <- summ[[4]][, 4]
+#   not_significant <- character()
+#   not_significant <- names(which(pvals > 0.1))
+#   not_significant <- not_significant[!not_significant %in% "(Intercept)"]
+# }
 
 
 ##

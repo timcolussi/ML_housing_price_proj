@@ -129,8 +129,7 @@ housing_data[1380, "Electrical"] <- mode_elec_timber
 more_columns_to_drop <- c("LotShape", "Id", "LandContour", "BsmtQual", "GarageArea")
 housing_data[, more_columns_to_drop] <- list(NULL)
 
-columns_finished <- ncol(housing_data)
-na_finished <- sum(is.na(housing_data))
+
 
 ## figuring out categoricals with low instances
 ## combining FR2 and FR3 to FR
@@ -255,7 +254,12 @@ housing_data$SaleCondition <- ifelse(housing_data$SaleCondition == "AdjLand" |
 
 to_drop <- c("Street", "Condition2", "Heating")
 housing_data[, to_drop] <- NULL
+housing_data$TotalBsmtSF <- NULL
+housing_data$GrLivArea <- NULL
+housing_data$Utilities <- NULL
 
+columns_finished <- ncol(housing_data)
+na_finished <- sum(is.na(housing_data))
 
 print(paste0("Number of Columns before Eng.: ", columns_started))
 print(paste0("Number of NAs before Eng.: ", na_started))
@@ -295,6 +299,117 @@ housing_data <- housing_data[-c(692,1183), ]
 
 ```
 
+## Importing and Processing Test Data
+
+```{r}
+
+unseen_data_raw <- read_csv("./test.csv") 
+unseen_data <- unseen_data_raw
+
+unseen_data$TotPorchSF <- unseen_data$`3SsnPorch` + unseen_data$OpenPorchSF + 
+  unseen_data$ScreenPorch + unseen_data$EnclosedPorch
+
+# adding a column for percent of basement that is finished
+unseen_data$BsmtPercFin <- (unseen_data$BsmtFinSF1 +
+                               unseen_data$BsmtFinSF2)/unseen_data$TotalBsmtSF
+
+# added TotSF and TotSFAbvGrd columns 
+unseen_data <- unseen_data %>% 
+  rename(FrstFlrSF = `1stFlrSF`,
+         ScndFlrSF = `2ndFlrSF`)
+unseen_data$TotSF <- unseen_data$GrLivArea  + unseen_data$TotalBsmtSF
+
+# adding columns for TotFullBath and TotHalfBath
+unseen_data$TotFullBath <- unseen_data$FullBath + unseen_data$BsmtFullBath
+unseen_data$TotHalfBath <- unseen_data$HalfBath + unseen_data$BsmtHalfBath
+
+# removing some columns
+unseen_data <- unseen_data %>% 
+  rename(ThrScn = `3SsnPorch`)
+columns_to_drop <- c("PoolQC", "MiscFeature", "MiscValue", "GarageYrBlt",
+                     "BsmtFinType1", "BsmtFinSF1", "BsmtFinType2", "BsmtFinSF2", "FrstFlrSF",
+                     "ScndFlrSF", "BsmtUnfSF", "FullBath", "HalfBath", "BsmtFullBath",
+                     "BsmtHalfBath", "OpenPorchSF", "ThrScn", "ScreenPorch", "EnclosedPorch")
+unseen_data[, columns_to_drop] <- list(NULL)
+
+# imputing NAs with "None" or 0
+library(data.table)
+
+columns_to_convert_na_none <- c("Fence", "FireplaceQu", "GarageType", "GarageFinish", "GarageCond",
+                                "MasVnrType", "Alley", "BsmtQual", "BsmtCond", "BsmtExposure", 
+                                "GarageQual", "Garage")
+
+columns_to_convert_na_zero <- c("MasVnrArea", "BsmtPercFin", "PoolArea")
+
+for(k in names(unseen_data)){
+  if(k %in% columns_to_convert_na_none){
+    set(x = unseen_data, which(is.na(unseen_data[[k]])), k, "None")
+  }
+  else if(k %in% columns_to_convert_na_zero){
+    set(x = unseen_data, which(is.na(unseen_data[[k]])), k, 0)
+  }
+}
+
+# Imputing LotFrontage
+unseen_data <- unseen_data %>% 
+  group_by(Neighborhood, LotConfig) %>% 
+  mutate(LotFrontage = ifelse(is.na(LotFrontage), mean(LotFrontage, na.rm = TRUE), LotFrontage))
+gilbert <- unseen_data %>% 
+  filter(Neighborhood == "Gilbert")
+mn_lf_gilbert <- round(mean(gilbert$LotFrontage, na.rm = TRUE), digits = 2)
+noridge <- unseen_data %>% 
+  filter(Neighborhood == "NoRidge")
+mn_lf_noridge <- round(mean(noridge$LotFrontage, na.rm = TRUE), digits = 2)
+idx_gilbert <- c(482, 1218)
+idx_nwames <- c(498, 1175)
+idx_noridge <- c(537)
+unseen_data[idx_gilbert, "LotFrontage"] <- mn_lf_gilbert
+unseen_data[idx_nwames, "LotFrontage"] <- mean_lot_nwames
+unseen_data[idx_noridge, "LotFrontage"] <- mn_lf_noridge
+
+# Imputing Tot columns
+unseen_data[661, "TotSF"] <- unseen_data_raw[661, "GrLivArea"]
+unseen_data[661, "TotFullBath"] <- unseen_data_raw[661, "FullBath"]
+unseen_data[661, "TotHalfBath"] <- unseen_data_raw[661, "HalfBath"]
+
+# Imputing MSZoning
+idotrr <- unseen_data %>% 
+  filter(Neighborhood == "IDOTRR")
+id_mode_zone <- getmode(idotrr$MSZoning)
+mitchel <- unseen_data %>% 
+  filter(Neighborhood == "Mitchel")
+mitch_mode_zone <- getmode(mitchel$MSZoning)
+idx_idotrr <- c(456, 757, 791)
+unseen_data[idx_idotrr, "MSZoning"] <- id_mode_zone
+unseen_data[1445, "MSZoning"] <- mitch_mode_zone
+
+# Imputing another Tot and Half Bath
+unseen_data[729, "TotFullBath"] <- unseen_data_raw[729, "FullBath"]
+unseen_data[729, "TotHalfBath"] <- unseen_data_raw[729, "HalfBath"]
+
+# imputing columns with mode
+columns_to_mode <- c("Exterior1st", "Exterior2nd", "KitchenQual", "Functional", "SaleType")
+
+for(k in names(unseen_data)){
+  if(k %in% columns_to_mode){
+    set(x = unseen_data, which(is.na(unseen_data[[k]])), k, getmode(unseen_data[[k]]))
+  }
+}
+
+# final clean up
+unseen_data[1117, "GarageCars"] <- 1.5
+unseen_data[1117, "GarageArea"] <- 412
+
+to_drop <- c("Street", "Condition2", "Heating", "Utilities", "TotalBsmtSF", "GrLivArea",
+             "LotShape", "Id", "LandContour", "BsmtQual", "GarageArea")
+
+unseen_data[, to_drop] <- NULL
+
+
+
+```
+
+
 ## Modeling
 
 ```{r}
@@ -302,8 +417,8 @@ modeling_data <- housing_data
 modeling_data$LogSalePrice <- log(modeling_data$SalePrice)
 modeling_data$SalePrice <- NULL
 
-# removing Utilities
-modeling_data$Utilities <- NULL
+modeling_data[] <- lapply(modeling_data, function(x) if(is.character(x)) as.factor(x) else x)
+modeling_data$MSSubClass <- as.factor(modeling_data$MSSubClass)
 
 
 
