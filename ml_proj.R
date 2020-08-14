@@ -623,6 +623,103 @@ head(mlr_pred)
 write.csv(mlr_pred, "mlr_pred.csv", row.names = FALSE)
 mlr_kaggle_score <- 0.13701
 
+#############################################################################################
+################ Ridge Regression ###########################################################
+#############################################################################################
+# train2, test2, target2, best_mlr
+grid = 10^seq(5, -2, length = 100)
+library(glmnet)
+library(caret)
+
+x = model.matrix(LogSalePrice ~ ., train2)[, -1] #Dropping the intercept column.
+y = train2$LogSalePrice
+
+
+set.seed(2187)
+cv_ridge = cv.glmnet(x, y, lambda = grid, alpha = 0, nfolds = 5)
+plot(cv_ridge, main = "Ridge Regression\n")
+best_lambda <- cv_ridge$lambda.min
+log(cv_ridge$lambda.min)
+best_ridge_fit <- cv_ridge$glmnet.fit
+head(best_ridge_fit)
+best_ridge <- glmnet(x, y, alpha = 0, lambda = best_lambda)
+coef(best_ridge)
+
+train2_features <- train2
+train2_features$LogSalePrice <- NULL
+pred_ridge_train <- predict(best_ridge, s = best_lambda, newx = x)
+actual_ridge_train <- train2$LogSalePrice
+preds_ridge_train <- pred_ridge_train
+rss_ridge_train <- sum((preds_ridge_train - actual_ridge_train) ^ 2)
+tss_ridge_train <- sum((actual_ridge_train - mean(actual_ridge_train)) ^ 2)
+rsq_ridge_train <- 1 - rss_ridge_train/tss_ridge_train
+rsq_ridge_train
+x_test <- model.matrix(LogSalePrice ~ ., test2)[, -1]
+names(test2)
+preds_ridge_test <- predict(best_ridge, s = best_lambda, newx = x_test)
+actual_ridge_test <- test2$LogSalePrice
+rss_ridge_test <- sum((preds_ridge_test - actual_ridge_test) ^ 2)
+tss_ridge_test <- sum((actual_ridge_test - mean(actual_ridge_test)) ^ 2)
+rsq_ridge_test <- 1 - rss_ridge_test/tss_ridge_test
+rsq_ridge_test
+
+
+library(fastDummies)
+unseen_data_dummy <- dummy_cols(unseen_data)
+newx_unseen <- unseen_data
+newx_unseen$LogSalePrice <- 0
+newx_unseen <- model.matrix(LogSalePrice ~ ., newx_unseen)[, -1]
+pred_ridge_unseen <- predict(best_ridge, s = best_lambda, newx = newx_unseen)
+
+length(levels(unseen_data$MSSubClass))
+housing_data_dummy <- dummy_cols(housing_data)
+
+glimpse(unseen_data)
+sum(is.na(unseen_data))
+
+unseen_fac <- lapply(unseen_data, function(x) if(is.factor(x)) length(levels(x)))
+model_fac <- lapply(modeling_data, function(x) if(is.factor(x)) length(levels(x)))
+cbind(unseen_fac, model_fac)
+fac_level
+levels(unseen_data$MSSubClass)
+table(unseen_data$MSSubClass)
+
+unseen_data2 <- unseen_data
+unseen_fac2 <- lapply(unseen_data2, function(x) if(is.factor(x)) length(levels(x)))
+droplevels(unseen_data2)
+unseen_fac3 <- lapply(unseen_data2, function(x) if(is.factor(x)) length(levels(x)))
+fac_level <- cbind(fac_level, unseen_fac2, unseen_fac3)
+fac_level
+
+levels(modeling_data$HouseStyle)
+levels(unseen_data$HouseStyle)
+levels(unseen_data2$MSSubClass)
+
+table(unseen_data2$MSSubClass)
+droplevels(unseen_data2$MSSubClass)
+levels(modeling_data$Electrical)
+levels(unseen_data$Electrical)
+unseen_data$Electrical <- factor(unseen_data$Electrical, 
+                                  levels = c(levels(unseen_data$Electrical), "Mix"))
+levels(unseen_data2$Electrical)
+table(unseen_data2$Electrical)
+names(unseen_data)
+unseen_data$HouseStyle <- factor(unseen_data$HouseStyle, 
+                                  levels = c(levels(unseen_data$HouseStyle), "2.5Fin"))
+levels(unseen_data2$HouseStyle)
+unseen_data <- droplevels(unseen_data)
+levels(unseen_data$MSSubClass)
+
+pred_ridge_unseen[,1]
+
+
+ridge_pred <- data.frame("Id" = unseen_data_raw$Id, "SalePrice" = exp(pred_ridge_unseen[,1]))
+ridge_pred$SalePrice  <- round(ridge_pred$SalePrice, digits = 0)
+head(ridge_pred)
+
+write.csv(ridge_pred, "ridge_pred.csv", row.names = FALSE)
+mlr_kaggle_score <- 0.14332
+
 
 # exp(mlr_unseen_pred[, 1])
 

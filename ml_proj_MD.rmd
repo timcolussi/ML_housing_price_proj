@@ -527,11 +527,18 @@ unseen_data$SaleCondition <- ifelse(unseen_data$SaleCondition == "AdjLand" |
                                        unseen_data$SaleCondition == "Family", "Other",
                                      unseen_data$SaleCondition)
 
+
+
+
+
+```
+
+
+```{r}
+glimpse(unseen_data)
+
 unseen_data[] <- lapply(unseen_data, function(x) if(is.character(x)) as.factor(x) else x)
 unseen_data$MSSubClass <- as.factor(unseen_data$MSSubClass)
-
-
-
 ```
 
 
@@ -610,6 +617,73 @@ mlr_kaggle_score <- 0.13701
 
 ```
 
+```{r}
+glimpse(unseen_data)
+levels(unseen_data$HouseStyle)
+levels(modeling_data$HouseStyle)
+```
+
+
+## Ridge Regression
+
+```{r}
+grid = 10^seq(5, -2, length = 100)
+library(glmnet)
+library(caret)
+
+x = model.matrix(LogSalePrice ~ ., train)[, -1] #Dropping the intercept column.
+y = train$LogSalePrice
+
+
+set.seed(2187)
+cv_ridge = cv.glmnet(x, y, lambda = grid, alpha = 0, nfolds = 5)
+plot(cv_ridge, main = "Ridge Regression\n")
+best_lambda <- cv_ridge$lambda.min
+best_ridge_fit <- cv_ridge$glmnet.fit
+best_ridge <- glmnet(x, y, alpha = 0, lambda = best_lambda)
+
+train_features <- train
+train_features$LogSalePrice <- NULL
+pred_ridge_train <- predict(best_ridge, s = best_lambda, newx = x)
+actual_ridge_train <- train$LogSalePrice
+preds_ridge_train <- pred_ridge_train
+
+# calculating train r-squared
+rss_ridge_train <- sum((preds_ridge_train - actual_ridge_train) ^ 2)
+tss_ridge_train <- sum((actual_ridge_train - mean(actual_ridge_train)) ^ 2)
+rsq_ridge_train <- 1 - rss_ridge_train/tss_ridge_train
+rsq_ridge_train
+
+# calculating test r-squared
+x_test <- model.matrix(LogSalePrice ~ ., test)[, -1]
+preds_ridge_test <- predict(best_ridge, s = best_lambda, newx = x_test)
+actual_ridge_test <- test$LogSalePrice
+rss_ridge_test <- sum((preds_ridge_test - actual_ridge_test) ^ 2)
+tss_ridge_test <- sum((actual_ridge_test - mean(actual_ridge_test)) ^ 2)
+rsq_ridge_test <- 1 - rss_ridge_test/tss_ridge_test
+rsq_ridge_test
+
+# adding fcator levels to unseen data to match model
+unseen_data$Electrical <- factor(unseen_data$Electrical,
+                                  levels = c(levels(unseen_data$Electrical), "Mix"))
+unseen_data$HouseStyle <- factor(unseen_data$HouseStyle,
+                                  levels = c(levels(unseen_data$HouseStyle), "2.5Fin"))
+
+
+# making predictions on the unseen data
+newx_unseen <- unseen_data
+newx_unseen$LogSalePrice <- 0
+newx_unseen <- model.matrix(LogSalePrice ~ ., newx_unseen)[, -1]
+pred_ridge_unseen <- predict(best_ridge, s = best_lambda, newx = newx_unseen)
+
+ridge_pred <- data.frame("Id" = unseen_data_raw$Id, "SalePrice" = exp(pred_ridge_unseen[,1]))
+ridge_pred$SalePrice  <- round(ridge_pred$SalePrice, digits = 0)
+
+# write.csv(ridge_pred, "ridge_pred.csv", row.names = FALSE)
+mlr_kaggle_score <- 0.14332
+
+
+```
 
 
 
