@@ -478,6 +478,159 @@ to_drop <- c("Street", "Condition2", "Heating", "Utilities", "TotalBsmtSF", "GrL
 
 unseen_data[, to_drop] <- NULL
 
+
+
+unique(modeling_data$MSSubClass)
+unique(unseen_data$MSSubClass)
+setdiff(modeling_data$MSSubClass, unseen_data$MSSubClass)
+
+which(unseen_data$MSSubClass == 150)
+unseen_data[1359, "MSSubClass"] <- as.factor(160)
+class(unseen_data$MSSubClass)
+
+## combining FR2 and FR3 to FR
+unseen_data$LotConfig <- ifelse(unseen_data$LotConfig == "FR2" | unseen_data$LotConfig == "FR3",
+                                 "FR", unseen_data$LotConfig)
+## can't remove neighborhood so split on this
+## altering RR and Pos categories in Cond1 
+unseen_data$Condition1 <- ifelse(unseen_data$Condition1 == "RRAe" | 
+                                    unseen_data$Condition1 == "RRAn" |
+                                    unseen_data$Condition1 == "RRNe" |
+                                    unseen_data$Condition1 == "RRNn", "RR", 
+                                  unseen_data$Condition1)
+unseen_data$Condition1 <- ifelse(unseen_data$Condition1 == "PosA" |
+                                    unseen_data$Condition1 == "PosN", "Pos",
+                                  unseen_data$Condition1)
+## dropping Cond2, mostly norm
+## grouping rare roofstyle as other
+unseen_data$RoofStyle <- ifelse(unseen_data$RoofStyle == "Flat" |
+                                   unseen_data$RoofStyle == "Gambrel" |
+                                   unseen_data$RoofStyle == "Mansard" |
+                                   unseen_data$RoofStyle == "Shed", "Other",
+                                 unseen_data$RoofStyle)
+## changing roofmatl to either CompShg or not
+unseen_data$RoofMatl <- ifelse(unseen_data$RoofMatl != "CompShg", "Other", unseen_data$RoofMatl)
+## Exterior1 to Shingles, Siding, Brick, or Other
+#housing_data$Exterior1st <- housing_data_raw$Exterior1st
+unseen_data$Exterior1st <- ifelse(unseen_data$Exterior1st == "AsbShng" |
+                                     unseen_data$Exterior1st == "AsphShn" |
+                                     unseen_data$Exterior1st == "WdShing", "Shingles",
+                                   unseen_data$Exterior1st)
+unseen_data$Exterior1st <- ifelse(unseen_data$Exterior1st == "MetalSd" |
+                                     unseen_data$Exterior1st == "VinylSd" |
+                                     unseen_data$Exterior1st == "Wd Sdng", "Siding",
+                                   unseen_data$Exterior1st)
+unseen_data$Exterior1st <- ifelse(unseen_data$Exterior1st == "BrkComm" |
+                                     unseen_data$Exterior1st == "BrkFace", "Brick",
+                                   unseen_data$Exterior1st)
+unseen_data$Exterior1st <- ifelse(unseen_data$Exterior1st == "Brick" |
+                                     unseen_data$Exterior1st == "Shingles" |
+                                     unseen_data$Exterior1st == "Siding", 
+                                   unseen_data$Exterior1st, "Other")
+## same for Exterior 2
+unseen_data$Exterior2nd <- ifelse(unseen_data$Exterior2nd == "AsbShng" |
+                                     unseen_data$Exterior2nd == "AsphShn" |
+                                     unseen_data$Exterior2nd == "WdShing", "Shingles",
+                                   unseen_data$Exterior2nd)
+unseen_data$Exterior2nd <- ifelse(unseen_data$Exterior2nd == "MetalSd" |
+                                     unseen_data$Exterior2nd == "VinylSd" |
+                                     unseen_data$Exterior2nd == "Wd Sdng", "Siding",
+                                   unseen_data$Exterior2nd)
+unseen_data$Exterior2nd <- ifelse(unseen_data$Exterior2nd == "BrkComm" |
+                                     unseen_data$Exterior2nd == "BrkFace", "Brick",
+                                   unseen_data$Exterior2nd)
+unseen_data$Exterior2nd <- ifelse(unseen_data$Exterior2nd == "Brick" |
+                                     unseen_data$Exterior2nd == "Shingles" |
+                                     unseen_data$Exterior2nd == "Siding", 
+                                   unseen_data$Exterior2nd, "Other")
+## changing ExterCond variables to AbTA, TA, and BlTA
+unseen_data$ExterCond <- ifelse(unseen_data$ExterCond == "Ex" |
+                                   unseen_data$ExterCond == "Gd", "AbTA",
+                                 unseen_data$ExterCond)
+unseen_data$ExterCond <- ifelse(unseen_data$ExterCond == "Fa" |
+                                   unseen_data$ExterCond == "Po", "BlTA",
+                                 unseen_data$ExterCond)
+## changed uncommon foundations to other
+unseen_data$Foundation <- ifelse(unseen_data$Foundation == "Slab" |
+                                    unseen_data$Foundation == "Stone" |
+                                    unseen_data$Foundation == "Wood", "Other",
+                                  unseen_data$Foundation)
+## grouped Fa and Po to BlTA for BsmtCond
+unseen_data$BsmtCond <- ifelse(unseen_data$BsmtCond == "Fa" |
+                                  unseen_data$BsmtCond == "Po", "BlTA",
+                                unseen_data$BsmtCond)
+## changed heatingQC to AbTA, TA, or BlTA
+unseen_data$HeatingQC <- ifelse(unseen_data$HeatingQC == "Ex" | 
+                                   unseen_data$HeatingQC == "Gd", "AbTA",
+                                 unseen_data$HeatingQC)
+unseen_data$HeatingQC <- ifelse(unseen_data$HeatingQC == "Fa" |
+                                   unseen_data$HeatingQC == "Po", "BlTA",
+                                 unseen_data$HeatingQC)
+## change Functional to either Typ or Deduct
+unseen_data$Functional <- ifelse(unseen_data$Functional == "Typ",
+                                  unseen_data$Functional, "Deduct")
+## changing fireplaceQu to AbTA, TA, BlTA, and None
+unseen_data$FireplaceQu <- ifelse(unseen_data$FireplaceQu == "Ex" |
+                                     unseen_data$FireplaceQu == "Gd", "AbTA",
+                                   unseen_data$FireplaceQu)
+unseen_data$FireplaceQu <- ifelse(unseen_data$FireplaceQu == "Fa" |
+                                     unseen_data$FireplaceQu == "Po", "BlTA",
+                                   unseen_data$FireplaceQu)
+## changing GarageQual to AbTA, TA, BlTA
+unseen_data$GarageQual <- ifelse(unseen_data$GarageQual == "Ex" |
+                                    unseen_data$GarageQual == "Gd", "AbTA",
+                                  unseen_data$GarageQual)
+unseen_data$GarageQual <- ifelse(unseen_data$GarageQual == "Fa" |
+                                    unseen_data$GarageQual == "Po", "BlTA",
+                                  unseen_data$GarageQual)
+## changing GarageCond to AbTA, TA, BlTA
+unseen_data$GarageCond <- ifelse(unseen_data$GarageCond == "Ex" |
+                                    unseen_data$GarageCond == "Gd", "AbTA",
+                                  unseen_data$GarageCond)
+unseen_data$GarageCond <- ifelse(unseen_data$GarageCond == "Fa" |
+                                    unseen_data$GarageCond == "Po", "BlTA",
+                                  unseen_data$GarageCond)
+## grouping SaleType into Contract, WarrDeed, New, Other
+unseen_data$SaleType <- ifelse(unseen_data$SaleType == "Con" |
+                                  unseen_data$SaleType == "ConLD" |
+                                  unseen_data$SaleType == "ConLI" |
+                                  unseen_data$SaleType == "ConLw", "Contract",
+                                unseen_data$SaleType)
+unseen_data$SaleType <- ifelse(unseen_data$SaleType == "CWD" |
+                                  unseen_data$SaleType == "WD", "WarrDeed",
+                                unseen_data$SaleType)
+unseen_data$SaleType <- ifelse(unseen_data$SaleType == "COD" |
+                                  unseen_data$SaleType == "Oth", "Other",
+                                unseen_data$SaleType)
+## grouped AdjLand, Alloca, Family as other for SaleCondition
+unseen_data$SaleCondition <- ifelse(unseen_data$SaleCondition == "AdjLand" |
+                                       unseen_data$SaleCondition == "Alloca" |
+                                       unseen_data$SaleCondition == "Family", "Other",
+                                     unseen_data$SaleCondition)
+
+unseen_data[] <- lapply(unseen_data, function(x) if(is.character(x)) as.factor(x) else x)
+unseen_data$MSSubClass <- as.factor(unseen_data$MSSubClass)
+
+
+mlr_unseen_pred <- predict(best_mlr, unseen_data, interval = "prediction")
+summary(mlr_unseen_pred)
+mlr_unseen_pred[,1]
+
+mlr_pred <- data.frame("Id" = unseen_data_raw$Id, "SalePrice" = exp(mlr_unseen_pred[,1]))
+mlr_pred$SalePrice  <- round(mlr_pred$SalePrice, digits = 0)
+head(mlr_pred)
+
+write.csv(mlr_pred, "mlr_pred.csv", row.names = FALSE)
+mlr_kaggle_score <- 0.13701
+
+
+# exp(mlr_unseen_pred[, 1])
+
+# unseen_data$Condition1 <- unseen_data_raw$Condition1
+# table(unseen_data$Condition1)
+# class(unseen_data$Condition1)
+# unseen_data$Condition1 <- as.factor(unseen_data$Condition1)
+
 #############################################################################################
 ######### Ignore for now ####################################################################
 #############################################################################################
