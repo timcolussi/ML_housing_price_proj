@@ -685,6 +685,44 @@ mlr_kaggle_score <- 0.14332
 
 ```
 
+## LASSO Regression
+
+```{r}
+set.seed(2187)
+cv_lasso = cv.glmnet(x, y, lambda = grid, alpha = 1, nfolds = 5)
+plot(cv_ridge, main = "LASSO Regression\n")
+best_lambda_lasso <- cv_lasso$lambda.min
+best_lambda_lasso
+best_lasso <- glmnet(x, y, alpha = 1, lambda = best_lambda_lasso)
+coef(best_lasso)
+
+pred_lasso_train <- predict(best_lasso, s = best_lambda_lasso, newx = x)
+actual_lasso_train <- train$LogSalePrice
+preds_lasso_train <- pred_lasso_train
+rss_lasso_train <- sum((preds_lasso_train - actual_lasso_train) ^ 2)
+tss_lasso_train <- sum((actual_lasso_train - mean(actual_lasso_train)) ^ 2)
+rsq_lasso_train <- 1 - rss_lasso_train/tss_lasso_train
+rsq_lasso_train
+
+preds_lasso_test <- predict(best_lasso, s = best_lambda_lasso, newx = x_test)
+actual_lasso_test <- test$LogSalePrice
+rss_lasso_test <- sum((preds_lasso_test - actual_lasso_test) ^ 2)
+tss_lasso_test <- sum((actual_lasso_test - mean(actual_lasso_test)) ^ 2)
+rsq_lasso_test <- 1 - rss_lasso_test/tss_lasso_test
+rsq_lasso_test
+
+pred_lasso_unseen <- predict(best_lasso, s = best_lambda_lasso, newx = newx_unseen)
+
+lasso_pred <- data.frame("Id" = unseen_data_raw$Id, "SalePrice" = exp(pred_lasso_unseen[,1]))
+lasso_pred$SalePrice  <- round(lasso_pred$SalePrice, digits = 0)
+head(lasso_pred)
+
+#write.csv(lasso_pred, "lasso_pred.csv", row.names = FALSE)
+mlr_kaggle_score <- 0.14403
+
+
+
+```
 
 
 
