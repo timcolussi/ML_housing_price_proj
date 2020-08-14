@@ -868,6 +868,113 @@ head(rf_pred)
 write.csv(rf_pred, "rf_pred.csv", row.names = FALSE)
 mlr_kaggle_score <- 0.13762
 
+#############################################################################################
+############## Boost ########################################################################
+#############################################################################################
+
+library(gbm)
+set.seed(2187)
+boost1 = gbm(LogSalePrice ~ ., data = train2,
+                   distribution = "gaussian",
+                   n.trees = 10000,
+                   interaction.depth = 5,
+                   shrinkage = 0.001)
+
+# par(mfrow = c(1, 1))
+# summary(boost1)
+
+n.trees = seq(from = 100, to = 10000, by = 100)
+boost_predmat = predict(boost1, newdata = train2, n.trees = n.trees)
+
+par(mfrow = c(1, 1))
+berr = with(train2, apply((boost_predmat - LogSalePrice)^2, 2, mean))
+plot(n.trees, berr, pch = 16,
+     ylab = "Mean Squared Error",
+     xlab = "# Trees",
+     main = "Boosting Test Error")
+
+set.seed(2187)
+boost2 = gbm(LogSalePrice ~ ., data = train2,
+                    distribution = "gaussian",
+                    n.trees = 10000,
+                    interaction.depth = 5,
+                    shrinkage = 0.01)
+boost_predmat2 = predict(boost2, newdata = train2, n.trees = n.trees)
+
+berr2 = with(train2, apply((boost_predmat2 - LogSalePrice)^2, 2, mean))
+plot(n.trees, berr2, pch = 16,
+     ylab = "Mean Squared Error",
+     xlab = "# Trees",
+     main = "Boosting Test Error")
+
+set.seed(2187)
+boost3 = gbm(LogSalePrice ~ ., data = train2,
+             distribution = "gaussian",
+             n.trees = 10000,
+             interaction.depth = 5,
+             shrinkage = 0.1)
+boost_predmat3 = predict(boost3, newdata = train2, n.trees = n.trees)
+
+berr3 = with(train2, apply((boost_predmat3 - LogSalePrice)^2, 2, mean))
+plot(n.trees, berr3, pch = 16,
+     ylab = "Mean Squared Error",
+     xlab = "# Trees",
+     main = "Boosting Test Error")
+
+set.seed(2187)
+boost4 = gbm(LogSalePrice ~ ., data = train2,
+             distribution = "gaussian",
+             n.trees = 10000,
+             interaction.depth = 5,
+             shrinkage = 0.05)
+boost_predmat4 = predict(boost4, newdata = train2, n.trees = n.trees)
+
+berr4 = with(train2, apply((boost_predmat4 - LogSalePrice)^2, 2, mean))
+plot(n.trees, berr4, pch = 16,
+     ylab = "Mean Squared Error",
+     xlab = "# Trees",
+     main = "Boosting Test Error")
+
+boost_best <- gbm(LogSalePrice ~ ., data = train2,
+                  distribution = "gaussian",
+                  n.trees = 2500,
+                  interaction.depth = 5,
+                  shrinkage = 0.1)
+
+preds_boost_train <- boost_best$fit
+actual_boost_train <- train2$LogSalePrice
+rss_boost_train <- sum((preds_boost_train - actual_boost_train) ^ 2)
+tss_boost_train <- sum((actual_boost_train - mean(actual_boost_train)) ^ 2)
+rsq_boost_train <- 1 - rss_boost_train/tss_boost_train
+rsq_boost_train
+
+preds_boost_test <- predict(boost_best, newdata = test2, n.trees = 2500)
+actual_boost_test <- test2$LogSalePrice
+rss_boost_test <- sum((preds_boost_test - actual_boost_test) ^ 2)
+tss_boost_test <- sum((actual_boost_test - mean(actual_boost_test)) ^ 2)
+rsq_boost_test <- 1 - rss_boost_test/tss_boost_test
+rsq_boost_test
+
+boost_best_all <- gbm(LogSalePrice ~ ., data = modeling_data,
+                      distribution = "gaussian",
+                      n.trees = 2500,
+                      interaction.depth = 5,
+                      shrinkage = 0.1)
+
+pred_boost_unseen <- predict(boost_best_all, newdata = unseen_data, n.trees = 2500)
+pred_boost_unseen <- as.matrix(pred_boost_unseen)
+
+boost_pred <- data.frame("Id" = unseen_data_raw$Id, "SalePrice" = exp(pred_boost_unseen[,1]))
+boost_pred$SalePrice  <- round(boost_pred$SalePrice, digits = 0)
+head(boost_pred)
+
+write.csv(boost_pred, "boost_pred.csv", row.names = FALSE)
+mlr_kaggle_score <- 0.12925
+
+
+
+
+
 
 #############################################################################################
 ######### Ignore for now ####################################################################
