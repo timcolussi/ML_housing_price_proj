@@ -765,6 +765,53 @@ head(lasso_pred)
 write.csv(lasso_pred, "lasso_pred.csv", row.names = FALSE)
 mlr_kaggle_score <- 0.14403
 
+#############################################################################################
+#################### ElasticNet #############################################################
+#############################################################################################
+
+library(caret)
+set.seed(2187)
+train_control <- trainControl(method = 'cv', number = 5)
+en_tune_grid <- expand.grid(lambda = grid, alpha = seq(0,1,by=0.1))
+elastic_net_model <- train(x, y, method = 'glmnet', trControl = train_control,
+                           tuneGrid = en_tune_grid)
+elastic_net_model$bestTune
+best_en_alpha <- elastic_net_model$bestTune[[1]]
+best_en_lambda <- elastic_net_model$bestTune[[2]]
+class(best_en_alpha)
+
+best_elastic_net <- glmnet(x, y, alpha = best_en_alpha, lambda = best_en_lambda)
+coef(best_elastic_net)
+
+pred_en_train <- predict(best_elastic_net, newx = x)
+actual_en_train <- train2$LogSalePrice
+preds_en_train <- pred_en_train
+rss_en_train <- sum((preds_en_train - actual_en_train) ^ 2)
+tss_en_train <- sum((actual_en_train - mean(actual_en_train)) ^ 2)
+rsq_en_train <- 1 - rss_en_train/tss_en_train
+rsq_en_train
+
+preds_en_test <- predict(best_elastic_net, newx = x_test)
+actual_en_test <- test2$LogSalePrice
+rss_en_test <- sum((preds_en_test - actual_en_test) ^ 2)
+tss_en_test <- sum((actual_en_test - mean(actual_en_test)) ^ 2)
+rsq_en_test <- 1 - rss_en_test/tss_en_test
+rsq_en_test
+
+x_mod <- model.matrix(LogSalePrice ~ ., modeling_data)[,-1]
+y_mod <- modeling_data$LogSalePrice
+best_en_alldata <- glmnet(x_mod, y_mod, alpha = best_en_alpha, lambda = best_en_lambda)
+
+pred_en_unseen <- predict(best_en_alldata, newx = newx_unseen)
+
+en_pred <- data.frame("Id" = unseen_data_raw$Id, "SalePrice" = exp(pred_en_unseen[,1]))
+en_pred$SalePrice  <- round(en_pred$SalePrice, digits = 0)
+head(en_pred)
+
+write.csv(en_pred, "en_pred.csv", row.names = FALSE)
+mlr_kaggle_score <- 0.13705
+
+
 
 #############################################################################################
 ######### Ignore for now ####################################################################
