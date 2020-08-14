@@ -807,10 +807,66 @@ pred_en_unseen <- predict(best_en_alldata, newx = newx_unseen)
 en_pred <- data.frame("Id" = unseen_data_raw$Id, "SalePrice" = exp(pred_en_unseen[,1]))
 en_pred$SalePrice  <- round(en_pred$SalePrice, digits = 0)
 head(en_pred)
-
+class(pred_en_unseen)
 write.csv(en_pred, "en_pred.csv", row.names = FALSE)
 mlr_kaggle_score <- 0.13705
 
+#############################################################################################
+########### Random Forest ###################################################################
+#############################################################################################
+library(randomForest)
+set.seed(2187)
+oob.err = numeric(25)
+for (mtry in 1:25) {
+  fit = randomForest(LogSalePrice ~ ., data = train2, mtry = mtry)
+  oob.err[mtry] = fit$mse[500]
+  cat("We're performing iteration", mtry, "\n")
+}
+
+#Visualizing the OOB error.
+plot(1:25, oob.err, pch = 16, type = "b",
+     xlab = "Variables Considered at Each Split",
+     ylab = "OOB Mean Squared Error",
+     main = "Random Forest OOB Error Rates\nby # of Variables")
+min(oob.err)
+oob_errors1 <- data.frame(oob.err)
+oob_errors1
+best_mtry_rf <- 17
+
+best_rf <- randomForest(LogSalePrice ~ ., train2, importance = TRUE, mtry = best_mtry_rf)
+best_rf
+best_rf$importance
+importance(best_rf)
+varImpPlot(best_rf)
+
+preds_rf_train <- best_rf$predicted
+actual_rf_train <- train2$LogSalePrice
+rss_rf_train <- sum((preds_rf_train - actual_rf_train) ^ 2)
+tss_rf_train <- sum((actual_rf_train - mean(actual_rf_train)) ^ 2)
+rsq_rf_train <- 1 - rss_rf_train/tss_rf_train
+rsq_rf_train
+
+pred_rf_test <- predict(best_rf, test2, type = "response")
+actual_rf_test <- test2$LogSalePrice
+rss_rf_test <- sum((pred_rf_test - actual_rf_test) ^ 2)
+tss_rf_test <- sum((actual_rf_test - mean(actual_rf_test)) ^ 2)
+rsq_rf_test <- 1 - rss_rf_test/tss_rf_test
+rsq_rf_test
+
+best_rf_alldata <- randomForest(LogSalePrice ~ ., modeling_data,
+                                importance = TRUE, mtry = best_mtry_rf)
+
+pred_rf_unseen <- predict(best_rf_alldata, unseen_data, type = "response")
+class(pred_rf_unseen)
+
+pred_rf_unseen <- as.matrix(pred_rf_unseen)
+
+rf_pred <- data.frame("Id" = unseen_data_raw$Id, "SalePrice" = exp(pred_rf_unseen[,1]))
+rf_pred$SalePrice  <- round(rf_pred$SalePrice, digits = 0)
+head(rf_pred)
+
+write.csv(rf_pred, "rf_pred.csv", row.names = FALSE)
+mlr_kaggle_score <- 0.13762
 
 
 #############################################################################################
