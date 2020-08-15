@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Importing the Data
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, message=FALSE} 
 setwd("~/NYCDSA/ML_project/ML_housing_price_proj")
 library(readr)
 housing_data_raw <- read_csv("./train.csv")
@@ -21,7 +21,7 @@ housing_data_raw <- read_csv("./train.csv")
 
 ## Determining Missingness
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 # function to calculate percent missingness in each column
 library(tidyverse)
 library(ggplot2)
@@ -49,7 +49,7 @@ ggplot(missing, aes(x = reorder(Column.Names, Percent.Missing), y = Percent.Miss
 
 ## Imputing Missingness and Feature Engineering
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 columns_started <- ncol(housing_data_raw)
 na_started <- sum(is.na(housing_data_raw))
 housing_data <- housing_data_raw
@@ -271,7 +271,7 @@ print(paste0("Number of NAs after Eng.: ", na_finished))
 
 ## EDA of the Target (Sale Price)
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 
 
 ggplot(housing_data, aes(x = SalePrice)) + geom_histogram(bins = 100) +
@@ -291,7 +291,7 @@ ggplot(target_df, aes(x = target)) + geom_histogram(bins = 100) +
 ggplot(housing_data, aes(x = SalePrice)) + geom_boxplot() + 
   scale_x_continuous(labels=scales::dollar_format())
 
-which(housing_data$SalePrice > 700000)
+# which(housing_data$SalePrice > 700000)
 
 # removing outliers
 housing_data <- housing_data[-c(692,1183), ]
@@ -301,7 +301,7 @@ housing_data <- housing_data[-c(692,1183), ]
 
 ## Importing and Processing Test Data
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 
 unseen_data_raw <- read_csv("./test.csv") 
 unseen_data <- unseen_data_raw
@@ -534,8 +534,8 @@ unseen_data$SaleCondition <- ifelse(unseen_data$SaleCondition == "AdjLand" |
 ```
 
 
-```{r}
-glimpse(unseen_data)
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+# glimpse(unseen_data)
 
 unseen_data[] <- lapply(unseen_data, function(x) if(is.character(x)) as.factor(x) else x)
 unseen_data$MSSubClass <- as.factor(unseen_data$MSSubClass)
@@ -544,7 +544,7 @@ unseen_data$MSSubClass <- as.factor(unseen_data$MSSubClass)
 
 ## Multiple Linear Regression
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 # creating modeling data
 modeling_data <- housing_data
 modeling_data$LogSalePrice <- log(modeling_data$SalePrice)
@@ -578,7 +578,7 @@ backwardAIC = step(mlr_model, scope, direction = "backward", k = 2)
 
 
 
-anova(backwardAIC, mlr_model)
+# anova(backwardAIC, mlr_model)
 
 pred_back <- predict(backwardAIC, test_target, interval = "prediction")
 plot(pred_back[,1], test$LogSalePrice,
@@ -617,16 +617,16 @@ mlr_kaggle_score <- 0.13701
 
 ```
 
-```{r}
-glimpse(unseen_data)
-levels(unseen_data$HouseStyle)
-levels(modeling_data$HouseStyle)
+```{recho=FALSE, warning=FALSE, message=FALSE}
+# glimpse(unseen_data)
+# levels(unseen_data$HouseStyle)
+# levels(modeling_data$HouseStyle)
 ```
 
 
 ## Ridge Regression
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 grid = 10^seq(5, -2, length = 100)
 library(glmnet)
 library(caret)
@@ -687,7 +687,7 @@ mlr_kaggle_score <- 0.14332
 
 ## LASSO Regression
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 set.seed(2187)
 cv_lasso = cv.glmnet(x, y, lambda = grid, alpha = 1, nfolds = 5)
 #plot(cv_ridge, main = "LASSO Regression\n")
@@ -726,20 +726,20 @@ mlr_kaggle_score <- 0.14403
 
 ## Elastic Net
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 library(caret)
 set.seed(2187)
 train_control <- trainControl(method = 'cv', number = 5)
 en_tune_grid <- expand.grid(lambda = grid, alpha = seq(0,1,by=0.1))
 elastic_net_model <- train(x, y, method = 'glmnet', trControl = train_control,
                            tuneGrid = en_tune_grid)
-elastic_net_model$bestTune
+# elastic_net_model$bestTune
 best_en_alpha <- elastic_net_model$bestTune[[1]]
 best_en_lambda <- elastic_net_model$bestTune[[2]]
-class(best_en_alpha)
+# class(best_en_alpha)
 
 best_elastic_net <- glmnet(x, y, alpha = best_en_alpha, lambda = best_en_lambda)
-coef(best_elastic_net)
+# coef(best_elastic_net)
 
 pred_en_train <- predict(best_elastic_net, newx = x)
 actual_en_train <- train$LogSalePrice
@@ -774,7 +774,7 @@ mlr_kaggle_score <- 0.13705
 
 ## Random Forest
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 library(randomForest)
 set.seed(2187)
 oob.err = numeric(25)
@@ -789,9 +789,9 @@ plot(1:25, oob.err, pch = 16, type = "b",
      xlab = "Variables Considered at Each Split",
      ylab = "OOB Mean Squared Error",
      main = "Random Forest OOB Error Rates\nby # of Variables")
-min(oob.err)
+# min(oob.err)
 oob_errors1 <- data.frame(oob.err)
-oob_errors1
+# oob_errors1
 best_mtry_rf <- 17
 
 best_rf <- randomForest(LogSalePrice ~ ., train, importance = TRUE, mtry = best_mtry_rf)
@@ -834,7 +834,7 @@ mlr_kaggle_score <- 0.13762
 
 ## Boosted Tree Regression
 
-```{r}
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
 library(gbm)
 set.seed(2187)
 # boost1 = gbm(LogSalePrice ~ ., data = train2,
@@ -937,11 +937,43 @@ mlr_kaggle_score <- 0.12925
 
 ```
 
+## Feature Importance Plots
+
+```{r,echo=FALSE, warning=FALSE, message=FALSE}
+
+coeffs <- numeric(156)
+for(i in 1:156){
+  coeffs[i] <- coefficients(best_lasso)[i]
+}
+lasso_coeffs <- data.frame("Feature" = row.names(coef(best_lasso)), "Coefficient" = coeffs)
+lasso_coeffs <- lasso_coeffs[-c(1),]
+lasso_coeffs %>%
+  arrange(desc(Coefficient)) %>% 
+  slice(1:15) %>%
+  mutate(Feature = fct_reorder(Feature, Coefficient)) %>%
+  ggplot( aes(x=Feature, y=Coefficient, fill = Coefficient)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  xlab("") +
+  theme_bw() +
+  ggtitle("Feature Importance from Lasso Regression") +
+  theme(legend.title = element_blank(), legend.position = "none")
+
+rf_importance <- importance(best_rf)
+rf_importance <- as.data.frame(rf_importance)
+rf_importance$Feature <- row.names(rf_importance)
+rf_importance %>% 
+  arrange(desc(IncNodePurity)) %>% 
+  slice(1:15) %>% 
+  mutate(Feature = fct_reorder(Feature, IncNodePurity)) %>% 
+  ggplot(aes(x=Feature, y=IncNodePurity, fill = IncNodePurity)) +
+  geom_bar(stat="Identity", ) +
+  coord_flip(ylim=c(1,37)) +
+  theme_bw() +
+  ggtitle("Feature Importance from Random Forest") +
+  theme(legend.title = element_blank(), legend.position = "none")
 
 
 
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

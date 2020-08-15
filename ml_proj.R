@@ -971,9 +971,92 @@ head(boost_pred)
 write.csv(boost_pred, "boost_pred.csv", row.names = FALSE)
 mlr_kaggle_score <- 0.12925
 
+#############################################################################################
+################## Plots ####################################################################
+#############################################################################################
+
+lasso_coefs2 <- coef(best_lasso)
+class(lasso_coefs)
+lasso_coefs <- as.data.frame(lasso_coefs[,1])
+lasso_coefs[1]
+row.names(lasso_coefs2)
+lasso_coefs2
+
+lasso_coefs3 <- data.frame("Features" = row.names(lasso_coefs2), "Coefficient" = lasso_coefs[1])
+lasso_coefs4 <- lasso_coefs3[order(lasso_coefs...1.),]
+
+coef(best_lasso, s = "lambda.1se")
+plot.importance(best_lasso)
+best_lasso$lambda
+plot(varImp(best_lasso, lambda = 0.01))
+
+plot(varImp(best_elastic_net, lambda = best_elastic_net$lambda, scale = FALSE))
+best_elastic_net$lambda
+names(lasso_coefs3)
+ 
+ggplot(data = lasso_coefs3, aes(x=Features, y = lasso_coefs...1.)) + geom_bar(stat = "Identity")
+
+coefficients(best_lasso)[3]
+
+coeffs <- numeric(156)
+for(i in 1:156){
+  coeffs[i] <- coefficients(best_lasso)[i]
+}
+class(coeffs)
+lasso_coeffs <- data.frame("Feature" = row.names(lasso_coefs2), "Coefficient" = coeffs)
+lasso_coeffs
+class(lasso_coeffs)
+
+ggplot(data = lasso_coeffs, aes(x = Feature, y = Coefficient)) + geom_bar(stat = "Identity")
+lasso_coeffs <- lasso_coeffs[-c(1),]
+lasso_coeffs <- lasso_coeffs %>% 
+  arrange(desc(Coefficient))
+lasso_coeffs
+
+lasso_coeffs <- lasso_coeffs[!(lasso_coeffs$Coefficient) == 0,]
+
+
+lasso_coeffs %>%
+  arrange(desc(Coefficient)) %>% 
+  slice(1:15) %>%
+  mutate(Feature = fct_reorder(Feature, Coefficient)) %>%
+  ggplot( aes(x=Feature, y=Coefficient, fill = Coefficient)) +
+  geom_bar(stat="identity") +
+  coord_flip() +
+  xlab("") +
+  theme_bw() +
+  ggtitle("Feature Importance from Lasso Regression") +
+  theme(legend.title = element_blank(), legend.position = "none")
 
 
 
+
+rf_importance <- importance(best_rf)
+class(rf_importance)
+rf_importance <- as.data.frame(rf_importance)
+rf_importance$Feature <- row.names(rf_importance)
+rf_importance
+rf_importance %>% 
+  mutate(Feature = fct_reorder(Feature, IncNodePurity)) %>% 
+  ggplot(aes(x = Feature, y = IncNodePurity)) +
+  geom_bar(stat="Identity") +
+  coord_flip(ylim = c(1.7, 37)) +
+  xlab("") +
+  theme_bw()
+
+library(viridis)
+
+rf_importance %>% 
+  arrange(desc(IncNodePurity)) %>% 
+  slice(1:15) %>% 
+  mutate(Feature = fct_reorder(Feature, IncNodePurity)) %>% 
+  ggplot(aes(x=Feature, y=IncNodePurity, fill = IncNodePurity)) +
+  geom_bar(stat="Identity", ) +
+  coord_flip(ylim=c(1,37)) +
+  theme_bw() +
+  ggtitle("Feature Importance from Random Forest") +
+  theme(legend.title = element_blank(), legend.position = "none")
+  
 
 
 #############################################################################################
